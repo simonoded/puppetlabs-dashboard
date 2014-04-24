@@ -69,6 +69,38 @@
 #   [*rack_version*]
 #     - The version of the rack gem to install
 #
+#   [*dashboard_ca_server*]
+#     - Where the certificate server is located in case the dashboard and the puppet master are not the same server
+#
+#   [*dashboard_ca_port*]
+#     - network port to the certificate server in case the dashboard and the puppet master are not the same server
+#
+#   [*dashboard_inventory_service*]
+#     - Enable the dashboard inventory service
+#
+#   [*dashboard_inventory_server*]
+#     - location of the inventory server
+#
+#
+#   [*dashboard_inventory_port*]
+#     - network port for the invenroty server
+#
+#   [*dashboard_file_bucket_diff*]
+#       - Enable the dashboard display file diff
+#
+#   [*dashboard_file_bucket_server*]
+#     -location of the file backet server
+#
+#   [*dashboard_file_bucket_port*]
+#     - network port for the file bucket server
+#
+#   [*dashboard_read_only_mode*]
+#     - Enable the the read only mode for the dashboard
+#
+#   [*dashboard_timezone*]
+#     - set the time zone "rake time:zones:local" for the name of your local time zone
+#
+#
 # Actions:
 #
 # Requires:
@@ -96,29 +128,40 @@
 #   puppet-dashboard.
 #
 class dashboard (
-  $dashboard_ensure          = $dashboard::params::dashboard_ensure,
-  $dashboard_user            = $dashboard::params::dashboard_user,
-  $dashboard_group           = $dashboard::params::dashboard_group,
-  $dashboard_password        = $dashboard::params::dashboard_password,
-  $dashboard_db              = $dashboard::params::dashboard_db,
-  $dashboard_environment     = $dashboard::params::dashboard_environment,
-  $dashboard_charset         = $dashboard::params::dashboard_charset,
-  $dashboard_site            = $dashboard::params::dashboard_site,
-  $dashboard_port            = $dashboard::params::dashboard_port,
-  $dashboard_config          = $dashboard::params::dashboard_config,
-  $dashboard_workers_service = $dashboard::params::dashboard_workers_service,
-  $dashboard_workers_config  = $dashboard::params::dashboard_workers_config,
-  $dashboard_num_workers     = $dashboard::params::dashboard_num_workers,
-  $dashboard_workers_start   = $dashboard::params::dashboard_workers_start,
-  $mysql_root_pw             = $dashboard::params::mysql_root_pw,
-  $passenger                 = $dashboard::params::passenger,
-  $passenger_install         = $dashboard::params::passenger_install,
-  $mysql_package_provider    = $dashboard::params::mysql_package_provider,
-  $ruby_mysql_package        = $dashboard::params::ruby_mysql_package,
-  $dashboard_config          = $dashboard::params::dashboard_config,
-  $dashboard_root            = $dashboard::params::dashboard_root,
-  $rails_base_uri            = $dashboard::params::rails_base_uri,
-  $rack_version              = $dashboard::params::rack_version
+  $dashboard_ensure                 = $dashboard::params::dashboard_ensure,
+  $dashboard_user                   = $dashboard::params::dashboard_user,
+  $dashboard_group                  = $dashboard::params::dashboard_group,
+  $dashboard_password               = $dashboard::params::dashboard_password,
+  $dashboard_db                     = $dashboard::params::dashboard_db,
+  $dashboard_environment            = $dashboard::params::dashboard_environment,
+  $dashboard_charset                = $dashboard::params::dashboard_charset,
+  $dashboard_site                   = $dashboard::params::dashboard_site,
+  $dashboard_port                   = $dashboard::params::dashboard_port,
+  $dashboard_config                 = $dashboard::params::dashboard_config,
+  $dashboard_workers_service        = $dashboard::params::dashboard_workers_service,
+  $dashboard_workers_config         = $dashboard::params::dashboard_workers_config,
+  $dashboard_num_workers            = $dashboard::params::dashboard_num_workers,
+  $dashboard_workers_start          = $dashboard::params::dashboard_workers_start,
+  $mysql_root_pw                    = $dashboard::params::mysql_root_pw,
+  $passenger                        = $dashboard::params::passenger,
+  $passenger_install                = $dashboard::params::passenger_install,
+  $mysql_package_provider           = $dashboard::params::mysql_package_provider,
+  $ruby_mysql_package               = $dashboard::params::ruby_mysql_package,
+  $dashboard_config                 = $dashboard::params::dashboard_config,
+  $dashboard_root                   = $dashboard::params::dashboard_root,
+  $rails_base_uri                   = $dashboard::params::rails_base_uri,
+  $rack_version                     = $dashboard::params::rack_version,
+  $dashboard_ca_server              = $dashboard::params::dashboard_ca_server,
+  $dashboard_ca_port                = $dashboard::params::dashboard_ca_port,
+  $dashboard_inventory_service      = $dashboard::params::dashboard_inventory_service,
+  $dashboard_inventory_server       = $dashboard::params::dashboard_inventory_server,
+  $dashboard_inventory_port         = $dashboard::params::dashboard_inventory_port,
+  $dashboard_file_bucket_diff       = $dashboard::params::dashboard_file_bucket_diff,
+  $dashboard_file_bucket_server     = $dashboard::params::dashboard_file_bucket_server,
+  $dashboard_file_bucket_port       = $dashboard::params::dashboard_file_bucket_port,
+  $dashboard_read_only_mode         = $dashboard::params::dashboard_read_only_mode,
+  $dashboard_timezone               = $dashboard::params::dashboard_timezone
+
 ) inherits dashboard::params {
 
   class { '::mysql::server':
@@ -227,10 +270,18 @@ class dashboard (
     ensure  => present,
     content => template('dashboard/database.yml.erb'),
   }
+  file {'/etc/puppet-dashboard/settings.yml':
+    ensure  => present,
+    content => template('dashboard/settings.yml.erb'),
+  }
 
   file { "${dashboard::params::dashboard_root}/config/database.yml":
     ensure => 'link',
     target => '/etc/puppet-dashboard/database.yml',
+  }
+  file { "${dashboard::params::dashboard_root}/config/settings.yml":
+    ensure => 'link',
+    target => '/etc/puppet-dashboard/settings.yml',
   }
 
   file { [ "${dashboard::params::dashboard_root}/log/production.log", "${dashboard::params::dashboard_root}/config/environment.rb" ]:
